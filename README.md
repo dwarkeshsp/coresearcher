@@ -1,18 +1,66 @@
 # CoResearcher - AI-Powered Document Analysis Application
 
-CoResearcher is a local document research assistant that helps users deeply understand documents through AI-powered analysis. It provides real-time document summarization, interactive chat, and automatic generation of study materials (flashcards and questions).
+CoResearcher is a document research assistant built specifically for podcast interview preparation and research. It provides real-time document summarization, interactive chat, and automatic generation of study materials (flashcards and interview questions). Originally built for the Dwarkesh Podcast research workflow.
 
 ## Features
 
-- **📁 File Browser**: Navigate and select local markdown and text files
+- **📁 File Browser**: Navigate and select local markdown and text files from Projects folder
 - **✏️ Document Editor**: Edit documents with syntax highlighting using CodeMirror
 - **💬 AI Chat**: Real-time streaming chat with document context
 - **🎯 Auto Summary**: Automatic document summarization when you open a file
-- **📇 Flashcards**: Auto-generated flashcards for key concepts
-- **❓ Study Questions**: Comprehensive questions to test understanding
+- **📇 Flashcards**: Andy Matuschak-style spaced repetition cards
+- **🎤 Interview Questions**: Generate deep, thought-provoking podcast interview questions
 - **⚡ Parallel Processing**: Summary, flashcards, and questions generate simultaneously
+- **🛑 Stop Button**: Interrupt AI streaming at any time and continue conversation
 
-## Prerequisites
+## Deployment to Vercel
+
+### Prerequisites
+- GitHub account
+- Vercel account (free at [vercel.com](https://vercel.com))
+- Anthropic API key
+
+### Step 1: Push to GitHub
+
+1. Create a new repository on GitHub
+2. Push your code:
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/coresearcher-2.git
+git branch -M main
+git push -u origin main
+```
+
+### Step 2: Deploy on Vercel
+
+1. Go to [vercel.com](https://vercel.com) and sign in
+2. Click "New Project"
+3. Import your GitHub repository
+4. Configure build settings (should auto-detect Next.js):
+   - Framework Preset: Next.js
+   - Build Command: `npm run build`
+   - Output Directory: `.next`
+
+### Step 3: Set Environment Variables
+
+In Vercel project settings, add:
+- `ANTHROPIC_API_KEY` = your_api_key_here
+
+### Step 4: Deploy
+
+1. Click "Deploy"
+2. Wait for build to complete
+3. Your app will be live at `https://your-project.vercel.app`
+
+### Important Notes for Production
+
+⚠️ **File System Access**: The current implementation uses local file system access which won't work on Vercel. For production, you'll need to:
+- Use a cloud storage solution (S3, Google Cloud Storage)
+- Or implement client-side file handling
+- Or use a database for document storage
+
+## Local Development
+
+### Prerequisites
 
 - Node.js 18+ installed
 - npm or yarn package manager
@@ -87,7 +135,7 @@ AI Service
 - **TypeScript**: Type-safe development
 - **Tailwind CSS**: Utility-first styling
 - **CodeMirror 6**: Advanced code editor
-- **Anthropic Claude**: AI model for analysis
+- **Anthropic Claude Opus 4.1**: Latest AI model (claude-opus-4-1-20250805)
 - **Server-Sent Events**: Real-time streaming
 - **Lucide Icons**: Beautiful icon set
 
@@ -119,6 +167,80 @@ npm start
 - [ ] Multiple document tabs
 - [ ] Customizable AI prompts
 - [ ] Offline mode with cached responses
+
+## Project Development Summary
+
+### What We Built
+CoResearcher started as a general document analysis tool and evolved into a specialized research assistant for podcast interview preparation. The app helps analyze documents and generate thoughtful interview questions in the style of the Dwarkesh Podcast.
+
+### Key Implementation Details
+
+#### 1. **Three-Panel Layout**
+- Left: File browser limited to `Projects/` folder for organization
+- Center: CodeMirror editor with markdown syntax highlighting
+- Right: AI panel with Chat, Flashcards, and Questions tabs
+
+#### 2. **AI Integration**
+- Model: claude-opus-4-1-20250805
+- Streaming responses using Server-Sent Events
+- Parallel generation of summaries, flashcards, and questions
+- Custom prompts tailored for podcast research
+
+#### 3. **Major Issues Fixed**
+- **Initial Load Bug**: Separated file path and content effects to ensure generation starts on first file open
+- **Chat Glitching**: Added proper file tracking to prevent re-summarization on every edit
+- **Folder Navigation**: Fixed dropdown to expand without changing directory
+- **Stop Functionality**: Added ability to interrupt streaming and continue conversation
+- **Question Format**: Changed from Q&A format to interview-style questions only
+
+#### 4. **Custom Prompts**
+Prompts were customized specifically for the Dwarkesh Podcast workflow:
+- Simple, direct summary prompt
+- Andy Matuschak-style flashcards for spaced repetition
+- Interview questions with examples from actual podcast episodes (Kotkin, Church, Karpathy)
+
+#### 5. **File Structure**
+```
+app/
+├── api/
+│   ├── chat/route.ts        # SSE streaming chat endpoint
+│   ├── files/route.ts       # File system operations
+│   └── generate/route.ts    # Flashcard/question generation
+├── layout.tsx
+└── page.tsx                  # Main app with state management
+
+components/
+├── AIPanel.tsx              # Chat, flashcards, questions UI
+├── Editor.tsx               # CodeMirror markdown editor
+└── FileBrowser.tsx          # File navigation component
+
+lib/
+├── anthropic.ts             # Claude client setup
+└── prompts.ts               # All AI prompts (customized for podcast)
+
+Projects/                    # User documents go here
+└── sergey-levine/          # Example research folder
+```
+
+### State Management
+- Lifted state in main page.tsx
+- Document content flows: FileBrowser → Editor → AIPanel
+- Proper cleanup of abort controllers for streaming
+- Debouncing to prevent excessive regeneration
+
+### Known Limitations for Production
+1. **File System**: Current implementation uses Node.js fs module which won't work on Vercel
+2. **No Save**: Editor changes aren't persisted to disk
+3. **No Auth**: No user authentication or multi-tenancy
+4. **API Keys**: Each user needs their own Anthropic API key
+
+### Potential Enhancements
+- Cloud storage integration (S3/GCS) for production deployment
+- Save functionality for edited documents
+- Export interview questions to various formats
+- Multi-document context for AI
+- Voice transcription for interview prep
+- Integration with podcast recording tools
 
 ## License
 
