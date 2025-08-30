@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, CreditCard, HelpCircle, Send, Loader2 } from 'lucide-react';
+import { MessageCircle, CreditCard, HelpCircle, Send, Loader2, Square } from 'lucide-react';
 import { Message } from '@/lib/anthropic';
 
 interface Flashcard {
@@ -72,6 +72,18 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const stopStreaming = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      // Save the partial message if there is one
+      if (currentStreamingMessage) {
+        setMessages(prev => [...prev, { role: 'assistant', content: currentStreamingMessage }]);
+        setCurrentStreamingMessage('');
+      }
+      setIsStreaming(false);
+    }
+  }, [currentStreamingMessage]);
 
   const generateSummary = async () => {
     if (!documentContent) return;
@@ -277,17 +289,31 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (isStreaming) {
+                  stopStreaming();
+                } else if (inputMessage.trim()) {
+                  sendMessage();
+                }
+              }
+            }}
             placeholder="Ask about the document..."
             className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isStreaming || !documentContent}
+            disabled={!documentContent}
           />
           <button
-            onClick={sendMessage}
-            disabled={isStreaming || !documentContent || !inputMessage.trim()}
-            className="bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={isStreaming ? stopStreaming : sendMessage}
+            disabled={!documentContent || (!isStreaming && !inputMessage.trim())}
+            className={`${
+              isStreaming 
+                ? 'bg-red-600 hover:bg-red-700' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            } text-white rounded-lg px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+            title={isStreaming ? 'Stop generating' : 'Send message'}
           >
-            {isStreaming ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {isStreaming ? <Square className="w-4 h-4" /> : <Send className="w-5 h-5" />}
           </button>
         </div>
       </div>
