@@ -9,12 +9,20 @@ export async function GET(request: NextRequest) {
     const requestPath = searchParams.get('path') || '';
     const type = searchParams.get('type') || 'list';
     
-    // Use home directory as base
-    const homeDir = process.env.HOME || '/';
-    const fullPath = path.resolve(homeDir, requestPath);
+    // Use Projects folder in current directory as base
+    const projectsDir = path.join(process.cwd(), 'Projects');
+    
+    // Ensure Projects directory exists
+    try {
+      await fs.access(projectsDir);
+    } catch {
+      await fs.mkdir(projectsDir, { recursive: true });
+    }
+    
+    const fullPath = path.resolve(projectsDir, requestPath);
     
     // Basic path traversal protection
-    if (!fullPath.startsWith(homeDir)) {
+    if (!fullPath.startsWith(projectsDir)) {
       return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
     }
 
@@ -37,7 +45,7 @@ export async function GET(request: NextRequest) {
                 const stat = await fs.stat(filePath);
                 return {
                   name: file,
-                  path: path.relative(homeDir, filePath),
+                  path: path.relative(projectsDir, filePath),
                   isDirectory: stat.isDirectory(),
                 };
               } catch {

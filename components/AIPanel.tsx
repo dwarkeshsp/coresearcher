@@ -1,7 +1,7 @@
 // components/AIPanel.tsx
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageCircle, CreditCard, HelpCircle, Send, Loader2 } from 'lucide-react';
 import { Message } from '@/lib/anthropic';
 
@@ -29,24 +29,41 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState('');
+  const [hasGeneratedForFile, setHasGeneratedForFile] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastFilePathRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (filePath && documentContent) {
+    // Only trigger when we switch to a different file
+    if (filePath && filePath !== lastFilePathRef.current) {
+      // Abort any ongoing operations
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+      }
+      
       // Reset state for new document
       setMessages([]);
       setFlashcards([]);
       setQuestions([]);
       setCurrentStreamingMessage('');
+      setHasGeneratedForFile(filePath);
+      lastFilePathRef.current = filePath;
       
-      // Start summary generation
-      generateSummary();
-      
-      // Generate flashcards and questions in parallel
-      generateStudyMaterials();
+      // Only generate if we have content
+      if (documentContent) {
+        // Start summary generation
+        generateSummary();
+        
+        // Generate flashcards and questions in parallel
+        generateStudyMaterials();
+      }
     }
-  }, [filePath, documentContent]);
+  }, [filePath]);
 
   useEffect(() => {
     scrollToBottom();

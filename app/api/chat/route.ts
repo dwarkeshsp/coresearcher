@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
           // Create the message stream
           const messageStream = await anthropic.messages.create({
-            model: 'claude-3-5-sonnet-20241022',
+            model: 'claude-opus-4-1-20250805',
             max_tokens: 4000,
             system: systemPrompt,
             messages: messages || [{ role: 'user', content: 'Please summarize this document.' }],

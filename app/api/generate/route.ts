@@ -25,14 +25,14 @@ export async function POST(request: NextRequest) {
     const [flashcardsResponse, questionsResponse] = await Promise.all([
       // Generate flashcards
       anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-opus-4-1-20250805',
         max_tokens: 2000,
         system: PROMPTS.GENERATE_FLASHCARDS,
         messages: [{ role: 'user', content }],
       }),
       // Generate questions
       anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-opus-4-1-20250805',
         max_tokens: 2000,
         system: PROMPTS.GENERATE_QUESTIONS,
         messages: [{ role: 'user', content }],

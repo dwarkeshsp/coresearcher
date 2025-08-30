@@ -96,17 +96,17 @@ export default function FileBrowser({ onFileSelect }: FileBrowserProps) {
     <div className="h-full bg-gray-800 text-white overflow-y-auto">
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Files</h2>
+          <h2 className="text-lg font-semibold">Projects</h2>
           <button
             onClick={() => loadDirectory('')}
             className="p-1 hover:bg-gray-700 rounded"
-            title="Go to home"
+            title="Go to Projects root"
           >
             <Home className="w-4 h-4" />
           </button>
         </div>
         {currentPath && (
-          <p className="text-xs text-gray-400 truncate">~/{currentPath}</p>
+          <p className="text-xs text-gray-400 truncate">Projects/{currentPath}</p>
         )}
       </div>
       
