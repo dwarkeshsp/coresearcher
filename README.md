@@ -1,36 +1,129 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CoResearcher - AI-Powered Document Analysis Application
 
-## Getting Started
+CoResearcher is a local document research assistant that helps users deeply understand documents through AI-powered analysis. It provides real-time document summarization, interactive chat, and automatic generation of study materials (flashcards and questions).
 
-First, run the development server:
+## Features
 
+- **📁 File Browser**: Navigate and select local markdown and text files
+- **✏️ Document Editor**: Edit documents with syntax highlighting using CodeMirror
+- **💬 AI Chat**: Real-time streaming chat with document context
+- **🎯 Auto Summary**: Automatic document summarization when you open a file
+- **📇 Flashcards**: Auto-generated flashcards for key concepts
+- **❓ Study Questions**: Comprehensive questions to test understanding
+- **⚡ Parallel Processing**: Summary, flashcards, and questions generate simultaneously
+
+## Prerequisites
+
+- Node.js 18+ installed
+- npm or yarn package manager
+- Anthropic API key (get one at [console.anthropic.com](https://console.anthropic.com))
+
+## Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd coresearcher-2
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.local.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Edit `.env.local` and add your Anthropic API key:
+```
+ANTHROPIC_API_KEY=your_actual_api_key_here
+```
 
-## Learn More
+## Running the Application
 
-To learn more about Next.js, take a look at the following resources:
+Start the development server:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open your browser and navigate to [http://localhost:3000](http://localhost:3000)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage
 
-## Deploy on Vercel
+1. **Browse Files**: Use the left panel to navigate your local file system
+2. **Select a Document**: Click on any `.md` or `.txt` file to open it
+3. **Automatic Analysis**: The AI will immediately start:
+   - Streaming a comprehensive summary in the chat
+   - Generating flashcards in the background
+   - Creating study questions in parallel
+4. **Interactive Chat**: Ask follow-up questions about the document
+5. **Study Materials**: Switch between Chat, Flashcards, and Questions tabs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+Frontend (Next.js)
+├── File Browser (left panel)
+├── Document Editor (center panel)
+└── AI Interface (right panel)
+    ├── Chat Tab (with streaming)
+    ├── Flashcards Tab
+    └── Questions Tab
+
+Backend (Next.js API Routes)
+├── /api/files - File system operations
+├── /api/chat - SSE streaming for chat
+└── /api/generate - Flashcard/question generation
+
+AI Service
+└── Claude 3.5 Sonnet (Anthropic)
+```
+
+## Technologies Used
+
+- **Next.js 14**: React framework with App Router
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **CodeMirror 6**: Advanced code editor
+- **Anthropic Claude**: AI model for analysis
+- **Server-Sent Events**: Real-time streaming
+- **Lucide Icons**: Beautiful icon set
+
+## Development
+
+Build for production:
+```bash
+npm run build
+```
+
+Start production server:
+```bash
+npm start
+```
+
+## Limitations
+
+- Currently supports only `.md` and `.txt` files
+- File editing is local only (no save functionality yet)
+- Requires active internet connection for AI features
+- API rate limits apply based on your Anthropic plan
+
+## Future Enhancements
+
+- [ ] Save edited documents
+- [ ] Support for PDF files
+- [ ] Export flashcards to Anki format
+- [ ] Persistent chat history
+- [ ] Multiple document tabs
+- [ ] Customizable AI prompts
+- [ ] Offline mode with cached responses
+
+## License
+
+MIT
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
