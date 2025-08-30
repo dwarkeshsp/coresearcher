@@ -12,7 +12,6 @@ interface Flashcard {
 
 interface Question {
   question: string;
-  answer: string;
 }
 
 interface AIPanelProps {
@@ -53,17 +52,19 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
       setCurrentStreamingMessage('');
       setHasGeneratedForFile(filePath);
       lastFilePathRef.current = filePath;
-      
-      // Only generate if we have content
-      if (documentContent) {
-        // Start summary generation
-        generateSummary();
-        
-        // Generate flashcards and questions in parallel
-        generateStudyMaterials();
-      }
     }
   }, [filePath]);
+
+  // Separate effect for content generation to ensure it triggers properly
+  useEffect(() => {
+    if (filePath && documentContent && filePath === lastFilePathRef.current) {
+      // Start summary generation
+      generateSummary();
+      
+      // Generate flashcards and questions in parallel
+      generateStudyMaterials();
+    }
+  }, [filePath, documentContent]);
 
   useEffect(() => {
     scrollToBottom();
@@ -355,26 +356,25 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
       {isGenerating ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-          <span className="ml-2 text-gray-400">Generating questions...</span>
+          <span className="ml-2 text-gray-400">Generating interview questions...</span>
         </div>
       ) : questions.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
+          <div className="mb-4 text-sm text-gray-400">
+            Interview questions for your podcast:
+          </div>
           {questions.map((q, index) => (
-            <div key={index} className="bg-gray-700 rounded-lg p-4">
-              <div className="mb-2">
-                <span className="text-xs text-gray-400 uppercase">Question {index + 1}</span>
-                <p className="text-white mt-1 font-medium">{q.question}</p>
-              </div>
-              <div className="border-t border-gray-600 pt-2 mt-2">
-                <span className="text-xs text-gray-400 uppercase">Answer</span>
-                <p className="text-gray-300 mt-1">{q.answer}</p>
+            <div key={index} className="bg-gray-700 rounded-lg p-4 hover:bg-gray-650 transition-colors">
+              <div className="flex items-start gap-3">
+                <span className="text-blue-400 font-semibold mt-0.5">{index + 1}.</span>
+                <p className="text-white flex-1">{q.question}</p>
               </div>
             </div>
           ))}
         </div>
       ) : (
         <div className="text-center text-gray-400 py-8">
-          {documentContent ? 'No questions generated yet' : 'Select a document to generate questions'}
+          {documentContent ? 'No questions generated yet' : 'Select a document to generate interview questions'}
         </div>
       )}
     </div>

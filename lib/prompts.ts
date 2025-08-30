@@ -22,18 +22,23 @@ BACK: [answer or explanation]
 Make the flashcards clear, concise, and focused on the most important information.
 Ensure the questions are specific and the answers are complete but brief.`,
 
-  GENERATE_QUESTIONS: `Generate 5-7 thoughtful study questions based on the following document.
-These questions should:
-- Test understanding of key concepts
-- Encourage critical thinking
-- Cover different aspects of the content
-- Range from basic comprehension to analysis
+  GENERATE_QUESTIONS: `You are helping a podcast host prepare interview questions based on the following document.
+Generate 7-10 insightful, thought-provoking questions that would make for an engaging podcast interview.
 
-Format each as:
-Q: [question]
-A: [comprehensive answer]
+The questions should:
+- Dig deep into the most interesting aspects of the topic
+- Encourage detailed, nuanced responses
+- Challenge assumptions and explore implications
+- Be open-ended to promote discussion
+- Cover both foundational concepts and cutting-edge ideas
+- Be suitable for an intelligent, curious audience
 
-Make questions that would help someone deeply understand the material.`,
+Format each question on its own line, numbered:
+1. [First question]
+2. [Second question]
+... and so on
+
+Focus on questions that would reveal insights, spark debate, or uncover non-obvious connections.`,
 
   CHAT_WITH_DOCUMENT: `You are an AI assistant helping a user understand and explore a document.
 You have access to the full document content and previous conversation.

@@ -10,7 +10,6 @@ interface Flashcard {
 
 interface Question {
   question: string;
-  answer: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -62,33 +61,25 @@ export async function POST(request: NextRequest) {
       flashcards.push(currentFlashcard as Flashcard);
     }
 
-    // Parse questions
+    // Parse questions - now simple numbered list
     const questionsText = questionsResponse.content[0].type === 'text'
       ? questionsResponse.content[0].text
       : '';
+    
+    console.log('Raw questions response:', questionsText); // Debug log
+    
     const questions: Question[] = [];
     const questionLines = questionsText.split('\n');
-    let currentQuestion: Partial<Question> = {};
-    let inAnswer = false;
     
     for (const line of questionLines) {
-      if (line.startsWith('Q:')) {
-        if (currentQuestion.question && currentQuestion.answer) {
-          questions.push(currentQuestion as Question);
-        }
-        currentQuestion = { question: line.replace('Q:', '').trim(), answer: '' };
-        inAnswer = false;
-      } else if (line.startsWith('A:')) {
-        currentQuestion.answer = line.replace('A:', '').trim();
-        inAnswer = true;
-      } else if (inAnswer && currentQuestion.answer && line.trim()) {
-        currentQuestion.answer += ' ' + line.trim();
+      // Match numbered questions like "1. Question text" or "1) Question text"
+      const match = line.match(/^\d+[\.\)]\s+(.+)/);
+      if (match && match[1]) {
+        questions.push({ question: match[1].trim() });
       }
     }
     
-    if (currentQuestion.question && currentQuestion.answer) {
-      questions.push(currentQuestion as Question);
-    }
+    console.log('Parsed questions:', questions); // Debug log
 
     return NextResponse.json({ flashcards, questions });
   } catch (error) {

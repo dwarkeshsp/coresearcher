@@ -49,7 +49,6 @@ export default function FileBrowser({ onFileSelect }: FileBrowserProps) {
       newExpanded.delete(folderPath);
     } else {
       newExpanded.add(folderPath);
-      loadDirectory(folderPath);
     }
     setExpandedFolders(newExpanded);
   };
