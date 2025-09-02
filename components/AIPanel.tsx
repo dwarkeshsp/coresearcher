@@ -188,7 +188,6 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
       if (!reader) throw new Error('No reader available');
 
       const decoder = new TextDecoder();
-      let accumulatedMessage = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -299,7 +298,6 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
       if (!reader) throw new Error('No reader available');
 
       const decoder = new TextDecoder();
-      let accumulatedMessage = '';
 
       while (true) {
         const { done, value } = await reader.read();
