@@ -9,3 +9,12 @@ body {
   background: #111827;
   color: #f3f4f6;
 }
+
+/* Simple fade-in animation used for streaming text updates */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in {
+  animation: fadeIn 120ms ease-out;
+}

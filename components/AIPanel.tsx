@@ -28,12 +28,20 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState('');
+  // For fade-in of only the most recent characters
+  const [streamBase, setStreamBase] = useState('');
+  const [streamFresh, setStreamFresh] = useState('');
   const [hasGeneratedForFile, setHasGeneratedForFile] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastFilePathRef = useRef<string | null>(null);
+  // Typewriter streaming refs
+  const pendingRef = useRef<string>('');
+  const displayRef = useRef<string>('');
+  const rafRef = useRef<number | null>(null);
+  const doneRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Only trigger when we switch to a different file
@@ -75,6 +83,51 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Typewriter helpers
+  const cancelTyping = () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  };
+
+  const resetTyping = () => {
+    cancelTyping();
+    pendingRef.current = '';
+    displayRef.current = '';
+    doneRef.current = false;
+    setStreamBase('');
+    setStreamFresh('');
+  };
+
+  const startTypingLoop = () => {
+    if (rafRef.current) return;
+    const tick = () => {
+      const take = Math.min(6, pendingRef.current.length); // chars per frame
+      if (take > 0) {
+        const next = pendingRef.current.slice(0, take);
+        pendingRef.current = pendingRef.current.slice(take);
+        const prev = displayRef.current;
+        displayRef.current = prev + next;
+        setStreamBase(prev);
+        setStreamFresh(next);
+        setCurrentStreamingMessage(displayRef.current);
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      // Buffer empty
+      rafRef.current = null;
+      if (doneRef.current) {
+        // Finalize message
+        setMessages([{ role: 'assistant', content: displayRef.current }]);
+        displayRef.current = '';
+        setCurrentStreamingMessage('');
+        doneRef.current = false;
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
   const toggleCard = (index: number) => {
     setExpandedCards(prev => {
       const next = new Set(prev);
@@ -90,19 +143,30 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
   const stopStreaming = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      // Save the partial message if there is one
-      if (currentStreamingMessage) {
-        setMessages(prev => [...prev, { role: 'assistant', content: currentStreamingMessage }]);
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+        updateTimerRef.current = null;
+      }
+      // Flush any pending/typed text
+      cancelTyping();
+      const partial = (displayRef.current || '') + (pendingRef.current || '');
+      pendingRef.current = '';
+      displayRef.current = '';
+      if (partial) {
+        setMessages(prev => [...prev, { role: 'assistant', content: partial }]);
         setCurrentStreamingMessage('');
       }
+      setStreamBase('');
+      setStreamFresh('');
       setIsStreaming(false);
     }
-  }, [currentStreamingMessage]);
+  }, []);
 
   const generateSummary = async () => {
     if (!documentContent) return;
     
     setIsStreaming(true);
+    resetTyping();
     setCurrentStreamingMessage('');
     abortControllerRef.current = new AbortController();
 
@@ -137,14 +201,23 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
             if (data === '[DONE]') {
-              setMessages([{ role: 'assistant', content: accumulatedMessage }]);
-              setCurrentStreamingMessage('');
+              doneRef.current = true;
+              if (!rafRef.current && pendingRef.current.length === 0) {
+                // Nothing left to type; finalize immediately
+                setMessages([{ role: 'assistant', content: displayRef.current }]);
+                displayRef.current = '';
+                setCurrentStreamingMessage('');
+                setStreamBase('');
+                setStreamFresh('');
+                doneRef.current = false;
+              }
             } else {
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
-                  accumulatedMessage += parsed.text;
-                  setCurrentStreamingMessage(accumulatedMessage);
+                  // Accumulate and ensure typing loop is running
+                  pendingRef.current += parsed.text;
+                  startTypingLoop();
                 }
               } catch (e) {
                 console.error('Failed to parse SSE data:', e);
@@ -159,6 +232,10 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
         setMessages([{ role: 'assistant', content: 'Failed to generate summary. Please try again.' }]);
       }
     } finally {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+        updateTimerRef.current = null;
+      }
       setIsStreaming(false);
       abortControllerRef.current = null;
     }
@@ -200,6 +277,7 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
     setMessages(updatedMessages);
     setInputMessage('');
     setIsStreaming(true);
+    resetTyping();
 
     abortControllerRef.current = new AbortController();
 
@@ -234,14 +312,21 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
             if (data === '[DONE]') {
-              setMessages([...updatedMessages, { role: 'assistant', content: accumulatedMessage }]);
-              setCurrentStreamingMessage('');
+              doneRef.current = true;
+              if (!rafRef.current && pendingRef.current.length === 0) {
+                setMessages([...updatedMessages, { role: 'assistant', content: displayRef.current }]);
+                displayRef.current = '';
+                setCurrentStreamingMessage('');
+                setStreamBase('');
+                setStreamFresh('');
+                doneRef.current = false;
+              }
             } else {
               try {
                 const parsed = JSON.parse(data);
                 if (parsed.text) {
-                  accumulatedMessage += parsed.text;
-                  setCurrentStreamingMessage(accumulatedMessage);
+                  pendingRef.current += parsed.text;
+                  startTypingLoop();
                 }
               } catch (e) {
                 console.error('Failed to parse SSE data:', e);
@@ -256,6 +341,10 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
         setMessages([...updatedMessages, { role: 'assistant', content: 'Failed to send message. Please try again.' }]);
       }
     } finally {
+      if (updateTimerRef.current) {
+        clearTimeout(updateTimerRef.current);
+        updateTimerRef.current = null;
+      }
       setIsStreaming(false);
       abortControllerRef.current = null;
     }
@@ -287,10 +376,9 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
         {currentStreamingMessage && (
           <div className="flex justify-start">
             <div className="w-full rounded-lg px-4 py-2 bg-gray-700 text-gray-100">
-              <div className="prose prose-sm prose-invert max-w-none">
-                {currentStreamingMessage.split('\n').map((line, i) => (
-                  <p key={i} className="mb-2 last:mb-0">{line}</p>
-                ))}
+              <div className="prose prose-sm prose-invert max-w-none whitespace-pre-wrap">
+                <span>{streamBase}</span>
+                <span key={streamBase.length} className="fade-in">{streamFresh}</span>
               </div>
             </div>
           </div>
