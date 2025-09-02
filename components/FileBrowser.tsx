@@ -93,23 +93,21 @@ export default function FileBrowser({ onFileSelect }: FileBrowserProps) {
 
   return (
     <div className="h-full bg-gray-800 text-white overflow-y-auto">
-      <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Projects</h2>
-          <button
-            onClick={() => loadDirectory('')}
-            className="p-1 hover:bg-gray-700 rounded"
-            title="Go to Projects root"
-          >
-            <Home className="w-4 h-4" />
-          </button>
-        </div>
-        {currentPath && (
-          <p className="text-xs text-gray-400 truncate">Projects/{currentPath}</p>
-        )}
+      <div className="h-12 px-4 border-b border-gray-700 flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Projects</h2>
+        <button
+          onClick={() => loadDirectory('')}
+          className="p-1 hover:bg-gray-700 rounded"
+          title="Go to Projects root"
+        >
+          <Home className="w-4 h-4" />
+        </button>
       </div>
       
       <div className="p-2">
+        {currentPath && (
+          <div className="px-1 pb-2 text-xs text-gray-400 truncate">Projects/{currentPath}</div>
+        )}
         {loading && <div className="text-center text-gray-400 py-4">Loading...</div>}
         {error && <div className="text-center text-red-400 py-4">{error}</div>}
         {!loading && !error && files.length === 0 && (

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, CreditCard, HelpCircle, Send, Loader2, Square } from 'lucide-react';
+import { MessageCircle, CreditCard, HelpCircle, Send, Loader2, Square, ChevronDown } from 'lucide-react';
 import { Message } from '@/lib/anthropic';
 
 interface Flashcard {
@@ -29,6 +29,7 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState('');
   const [hasGeneratedForFile, setHasGeneratedForFile] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -72,6 +73,18 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const toggleCard = (index: number) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
   };
 
   const stopStreaming = useCallback(() => {
@@ -257,7 +270,7 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] rounded-lg px-4 py-2 ${
+              className={`w-full rounded-lg px-4 py-2 ${
                 message.role === 'user'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-700 text-gray-100'
@@ -273,7 +286,7 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
         ))}
         {currentStreamingMessage && (
           <div className="flex justify-start">
-            <div className="max-w-[85%] rounded-lg px-4 py-2 bg-gray-700 text-gray-100">
+            <div className="w-full rounded-lg px-4 py-2 bg-gray-700 text-gray-100">
               <div className="prose prose-sm prose-invert max-w-none">
                 {currentStreamingMessage.split('\n').map((line, i) => (
                   <p key={i} className="mb-2 last:mb-0">{line}</p>
@@ -322,7 +335,7 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
   );
 
   const renderFlashcards = () => (
-    <div className="p-4 overflow-y-auto">
+    <div className="h-full p-4 overflow-y-auto">
       {isGenerating ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -331,15 +344,26 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
       ) : flashcards.length > 0 ? (
         <div className="space-y-4">
           {flashcards.map((card, index) => (
-            <div key={index} className="bg-gray-700 rounded-lg p-4">
-              <div className="mb-2">
-                <span className="text-xs text-gray-400 uppercase">Front</span>
-                <p className="text-white mt-1">{card.front}</p>
-              </div>
-              <div className="border-t border-gray-600 pt-2 mt-2">
-                <span className="text-xs text-gray-400 uppercase">Back</span>
-                <p className="text-gray-300 mt-1">{card.back}</p>
-              </div>
+            <div key={index} className="bg-gray-700 rounded-lg">
+              <button
+                onClick={() => toggleCard(index)}
+                className="w-full flex items-start justify-between gap-3 px-4 py-3 hover:bg-gray-650 rounded-t-lg text-left"
+                aria-expanded={expandedCards.has(index)}
+              >
+                <div className="flex-1">
+                  <span className="text-xs text-gray-400 uppercase">Front</span>
+                  <p className="text-white mt-1">{card.front}</p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-400 mt-1 transition-transform ${expandedCards.has(index) ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {expandedCards.has(index) && (
+                <div className="border-t border-gray-600 px-4 py-3 rounded-b-lg">
+                  <span className="text-xs text-gray-400 uppercase">Back</span>
+                  <p className="text-gray-300 mt-1">{card.back}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -352,7 +376,7 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
   );
 
   const renderQuestions = () => (
-    <div className="p-4 overflow-y-auto">
+    <div className="h-full p-4 overflow-y-auto">
       {isGenerating ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -382,10 +406,10 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
 
   return (
     <div className="h-full bg-gray-800 flex flex-col">
-      <div className="flex border-b border-gray-700">
+      <div className="h-12 flex border-b border-gray-700 items-stretch">
         <button
           onClick={() => setActiveTab('chat')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-2 px-4 text-sm font-medium transition-colors h-full ${
             activeTab === 'chat'
               ? 'bg-gray-700 text-white border-b-2 border-blue-500'
               : 'text-gray-400 hover:text-white hover:bg-gray-700'
@@ -396,7 +420,7 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
         </button>
         <button
           onClick={() => setActiveTab('flashcards')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-2 px-4 text-sm font-medium transition-colors h-full ${
             activeTab === 'flashcards'
               ? 'bg-gray-700 text-white border-b-2 border-blue-500'
               : 'text-gray-400 hover:text-white hover:bg-gray-700'
@@ -407,7 +431,7 @@ export default function AIPanel({ documentContent, filePath }: AIPanelProps) {
         </button>
         <button
           onClick={() => setActiveTab('questions')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex-1 flex items-center justify-center gap-2 px-4 text-sm font-medium transition-colors h-full ${
             activeTab === 'questions'
               ? 'bg-gray-700 text-white border-b-2 border-blue-500'
               : 'text-gray-400 hover:text-white hover:bg-gray-700'
